@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -13,9 +7,280 @@ datasource db {
   provider = "postgresql"
 }
 
-//////////////////////////////////////////////////
-// ENUMS
-//////////////////////////////////////////////////
+model State {
+  id        String                @id @default(uuid())
+  name      String
+  code      String                @unique
+  createdAt DateTime              @default(now())
+  consumers Consumer[]            @relation("StateConsumers")
+  boards    ElectricityBoard[]    @relation("StateBoards")
+  reports   GeneratedReportFile[] @relation("StateReports")
+  tariffs   Tariff[]              @relation("StateTariffs")
+  users     User[]                @relation("UserState")
+}
+
+model ElectricityBoard {
+  id            String                @id @default(uuid())
+  name          String
+  code          String                @unique
+  stateId       String
+  createdAt     DateTime              @default(now())
+  consumers     Consumer[]            @relation("BoardConsumers")
+  state         State                 @relation("StateBoards", fields: [stateId], references: [id])
+  reports       GeneratedReportFile[] @relation("BoardReports")
+  reportFormats ReportFormat[]        @relation("BoardFormats")
+  users         User[]                @relation("BoardUsers")
+}
+
+model User {
+  id           String            @id @default(uuid())
+  clerkUserId  String?           @unique
+  name         String
+  email        String?
+  phone        String?
+  role         RoleType
+  stateId      String?
+  boardId      String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  auditLogs    AuditLog[]        @relation("UserAuditLogs")
+  externalAuth ExternalAuth[]
+  board        ElectricityBoard? @relation("BoardUsers", fields: [boardId], references: [id])
+  state        State?            @relation("UserState", fields: [stateId], references: [id])
+  consents     UserConsent[]
+}
+
+model UserConsent {
+  id          String      @id @default(uuid())
+  userId      String
+  consentType ConsentType
+  granted     Boolean
+  grantedAt   DateTime?
+  revokedAt   DateTime?
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@unique([userId, consentType])
+}
+
+model Consumer {
+  id            String              @id @default(uuid())
+  clerkUserId   String?             @unique
+  name          String
+  phoneNumber   String?
+  address       String
+  stateId       String
+  boardId       String
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  board         ElectricityBoard    @relation("BoardConsumers", fields: [boardId], references: [id])
+  state         State               @relation("StateConsumers", fields: [stateId], references: [id])
+  billViews     CustomerBillView[]
+  consents      CustomerConsent[]
+  preferences   CustomerPreference?
+  queries       CustomerQuery[]
+  externalAuth  ExternalAuth[]
+  notifications Notification[]
+  meters        SmartMeter[]
+}
+
+model CustomerConsent {
+  id          String      @id @default(uuid())
+  consumerId  String
+  consentType ConsentType
+  granted     Boolean
+  grantedAt   DateTime?
+  revokedAt   DateTime?
+  consumer    Consumer    @relation(fields: [consumerId], references: [id])
+
+  @@unique([consumerId, consentType])
+}
+
+model ExternalAuth {
+  id             String    @id @default(uuid())
+  provider       String
+  providerUserId String
+  userId         String?
+  consumerId     String?
+  createdAt      DateTime  @default(now())
+  consumer       Consumer? @relation(fields: [consumerId], references: [id])
+  user           User?     @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerUserId])
+}
+
+model SmartMeter {
+  id             String                 @id @default(uuid())
+  meterNumber    String                 @unique
+  status         MeterStatus
+  consumerId     String
+  tariffId       String
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  billingReports BillingReport[]
+  aggregates     ConsumptionAggregate[]
+  readings       MeterReading[]
+  consumer       Consumer               @relation(fields: [consumerId], references: [id])
+  tariff         Tariff                 @relation(fields: [tariffId], references: [id])
+}
+
+model MeterReading {
+  id          String     @id @default(uuid())
+  meterId     String
+  timestamp   DateTime
+  consumption Float
+  voltage     Float?
+  current     Float?
+  meter       SmartMeter @relation(fields: [meterId], references: [id])
+
+  @@index([meterId, timestamp])
+}
+
+model Tariff {
+  id             String          @id @default(uuid())
+  stateId        String
+  type           TariffType
+  unitRate       Float
+  fixedCharge    Float
+  effectiveFrom  DateTime
+  effectiveTo    DateTime?
+  createdAt      DateTime        @default(now())
+  billingReports BillingReport[]
+  meters         SmartMeter[]
+  state          State           @relation("StateTariffs", fields: [stateId], references: [id])
+}
+
+model ConsumptionAggregate {
+  id          String                 @id @default(uuid())
+  meterId     String
+  periodStart DateTime
+  periodEnd   DateTime
+  granularity AggregationGranularity
+  totalUnits  Float
+  maxDemand   Float?
+  avgVoltage  Float?
+  createdAt   DateTime               @default(now())
+  meter       SmartMeter             @relation(fields: [meterId], references: [id])
+
+  @@unique([meterId, periodStart, granularity])
+}
+
+model BillingReport {
+  id             String             @id @default(uuid())
+  meterId        String
+  tariffId       String
+  billingStart   DateTime
+  billingEnd     DateTime
+  totalUnits     Float
+  energyCharge   Float
+  fixedCharge    Float
+  taxAmount      Float?
+  totalAmount    Float
+  version        Int                @default(1)
+  isLatest       Boolean            @default(true)
+  generatedAt    DateTime           @default(now())
+  meter          SmartMeter         @relation(fields: [meterId], references: [id])
+  tariff         Tariff             @relation(fields: [tariffId], references: [id])
+  viewed         CustomerBillView[]
+  recalculations RecalculationLog[]
+
+  @@index([meterId, billingStart])
+}
+
+model RecalculationLog {
+  id              String        @id @default(uuid())
+  billingReportId String
+  reason          String
+  triggeredBy     String
+  previousVersion Int
+  newVersion      Int
+  createdAt       DateTime      @default(now())
+  billingReport   BillingReport @relation(fields: [billingReportId], references: [id])
+}
+
+model CustomerBillView {
+  id              String        @id @default(uuid())
+  billingReportId String
+  consumerId      String
+  viewedAt        DateTime?
+  billingReport   BillingReport @relation(fields: [billingReportId], references: [id])
+  consumer        Consumer      @relation(fields: [consumerId], references: [id])
+}
+
+model CustomerQuery {
+  id           String      @id @default(uuid())
+  consumerId   String
+  queryText    String
+  aiCategory   String?
+  aiConfidence Float?
+  status       QueryStatus @default(PENDING)
+  adminReply   String?
+  reviewedBy   String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  consumer     Consumer    @relation(fields: [consumerId], references: [id])
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  consumerId String
+  title      String
+  message    String
+  type       String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  consumer   Consumer @relation(fields: [consumerId], references: [id])
+}
+
+model CustomerPreference {
+  id         String   @id @default(uuid())
+  consumerId String   @unique
+  language   String?  @default("en")
+  alerts     Boolean  @default(true)
+  theme      String?
+  consumer   Consumer @relation(fields: [consumerId], references: [id])
+}
+
+model ReportFormat {
+  id        String           @id @default(uuid())
+  boardId   String
+  name      String
+  schema    Json
+  createdAt DateTime         @default(now())
+  board     ElectricityBoard @relation("BoardFormats", fields: [boardId], references: [id])
+}
+
+model GeneratedReportFile {
+  id         String            @id @default(uuid())
+  reportType String
+  boardId    String?
+  stateId    String?
+  fileUrl    String
+  format     ReportFileFormat
+  createdBy  String
+  createdAt  DateTime          @default(now())
+  board      ElectricityBoard? @relation("BoardReports", fields: [boardId], references: [id])
+  state      State?            @relation("StateReports", fields: [stateId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  user      User     @relation("UserAuditLogs", fields: [userId], references: [id])
+}
+
+model DataRetentionPolicy {
+  id            String   @id @default(uuid())
+  stateId       String?
+  boardId       String?
+  entityType    String
+  retentionDays Int
+  createdAt     DateTime @default(now())
+}
 
 enum RoleType {
   SUPER_ADMIN
@@ -61,376 +326,4 @@ enum ReportFileFormat {
   CSV
   XML
   JSON
-}
-
-//////////////////////////////////////////////////
-// STATE + ELECTRICITY BOARD
-//////////////////////////////////////////////////
-
-model State {
-  id        String @id @default(uuid())
-  name      String
-  code      String @unique
-
-  boards    ElectricityBoard[] @relation("StateBoards")
-  tariffs   Tariff[]           @relation("StateTariffs")
-  consumers Consumer[]         @relation("StateConsumers")
-  users     User[]             @relation("UserState")
-  reports   GeneratedReportFile[] @relation("StateReports")
-
-  createdAt DateTime @default(now())
-}
-
-model ElectricityBoard {
-  id      String @id @default(uuid())
-  name    String
-  code    String @unique
-  stateId String
-
-  state   State @relation("StateBoards", fields: [stateId], references: [id])
-
-  consumers Consumer[]          @relation("BoardConsumers")
-  users     User[]              @relation("BoardUsers")
-  reportFormats ReportFormat[]  @relation("BoardFormats")
-  reports GeneratedReportFile[] @relation("BoardReports")
-
-  createdAt DateTime @default(now())
-}
-
-//////////////////////////////////////////////////
-// ADMIN USERS (CLERK AUTH)
-//////////////////////////////////////////////////
-
-model User {
-  id          String @id @default(uuid())
-  clerkUserId String? @unique
-  name        String
-  email       String?
-  phone       String?
-
-  role    RoleType
-  stateId String?
-  boardId String?
-
-  state State? @relation("UserState", fields: [stateId], references: [id])
-  board ElectricityBoard? @relation("BoardUsers", fields: [boardId], references: [id])
-
-  auditLogs AuditLog[] @relation("UserAuditLogs")
-  consents  UserConsent[]
-  externalAuth ExternalAuth[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model UserConsent {
-  id          String @id @default(uuid())
-  userId      String
-  consentType ConsentType
-  granted     Boolean
-  grantedAt   DateTime?
-  revokedAt   DateTime?
-
-  user User @relation(fields: [userId], references: [id])
-
-  @@unique([userId, consentType])
-}
-
-//////////////////////////////////////////////////
-// CONSUMERS (CUSTOMER APP USERS)
-//////////////////////////////////////////////////
-
-model Consumer {
-  id           String @id @default(uuid())
-  clerkUserId  String? @unique
-  name         String
-  phoneNumber  String?
-  address      String
-
-  stateId String
-  boardId String
-
-  state State @relation("StateConsumers", fields: [stateId], references: [id])
-  board ElectricityBoard @relation("BoardConsumers", fields: [boardId], references: [id])
-
-  meters        SmartMeter[]
-  queries       CustomerQuery[]
-  consents      CustomerConsent[]
-  notifications Notification[]
-  preferences   CustomerPreference?
-  billViews     CustomerBillView[]
-  externalAuth  ExternalAuth[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model CustomerConsent {
-  id          String @id @default(uuid())
-  consumerId  String
-  consentType ConsentType
-  granted     Boolean
-  grantedAt   DateTime?
-  revokedAt   DateTime?
-
-  consumer Consumer @relation(fields: [consumerId], references: [id])
-
-  @@unique([consumerId, consentType])
-}
-
-//////////////////////////////////////////////////
-// EXTERNAL AUTH PROVIDER (CLERK + FUTURE)
-//////////////////////////////////////////////////
-
-model ExternalAuth {
-  id             String @id @default(uuid())
-  provider       String
-  providerUserId String
-
-  userId     String?
-  consumerId String?
-
-  user     User?     @relation(fields: [userId], references: [id])
-  consumer Consumer? @relation(fields: [consumerId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@unique([provider, providerUserId])
-}
-
-//////////////////////////////////////////////////
-// SMART METERS + IOT DATA
-//////////////////////////////////////////////////
-
-model SmartMeter {
-  id          String @id @default(uuid())
-  meterNumber String @unique
-  status      MeterStatus
-
-  consumerId String
-  tariffId   String
-
-  consumer Consumer @relation(fields: [consumerId], references: [id])
-  tariff   Tariff   @relation(fields: [tariffId], references: [id])
-
-  readings       MeterReading[]
-  aggregates     ConsumptionAggregate[]
-  billingReports BillingReport[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model MeterReading {
-  id          String @id @default(uuid())
-  meterId     String
-  timestamp   DateTime
-  consumption Float
-  voltage     Float?
-  current     Float?
-
-  meter SmartMeter @relation(fields: [meterId], references: [id])
-
-  @@index([meterId, timestamp])
-}
-
-//////////////////////////////////////////////////
-// TARIFFS
-//////////////////////////////////////////////////
-
-model Tariff {
-  id            String @id @default(uuid())
-  stateId       String
-  type          TariffType
-  unitRate      Float
-  fixedCharge   Float
-  effectiveFrom DateTime
-  effectiveTo   DateTime?
-
-  state State @relation("StateTariffs", fields: [stateId], references: [id])
-
-  meters SmartMeter[]
-  billingReports BillingReport[]
-
-  createdAt DateTime @default(now())
-}
-
-//////////////////////////////////////////////////
-// AGGREGATED CONSUMPTION
-//////////////////////////////////////////////////
-
-model ConsumptionAggregate {
-  id          String @id @default(uuid())
-  meterId     String
-  periodStart DateTime
-  periodEnd   DateTime
-  granularity AggregationGranularity
-
-  totalUnits Float
-  maxDemand  Float?
-  avgVoltage Float?
-
-  meter SmartMeter @relation(fields: [meterId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@unique([meterId, periodStart, granularity])
-}
-
-//////////////////////////////////////////////////
-// BILLING SNAPSHOT
-//////////////////////////////////////////////////
-
-model BillingReport {
-  id           String @id @default(uuid())
-  meterId      String
-  tariffId     String
-  billingStart DateTime
-  billingEnd   DateTime
-
-  totalUnits   Float
-  energyCharge Float
-  fixedCharge  Float
-  taxAmount    Float?
-  totalAmount  Float
-
-  version  Int     @default(1)
-  isLatest Boolean @default(true)
-
-  meter  SmartMeter @relation(fields: [meterId], references: [id])
-  tariff Tariff     @relation(fields: [tariffId], references: [id])
-
-  recalculations RecalculationLog[]
-  viewed CustomerBillView[]
-
-  generatedAt DateTime @default(now())
-
-  @@index([meterId, billingStart])
-}
-
-model RecalculationLog {
-  id              String @id @default(uuid())
-  billingReportId String
-  reason          String
-  triggeredBy     String
-  previousVersion Int
-  newVersion      Int
-
-  billingReport BillingReport @relation(fields: [billingReportId], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-model CustomerBillView {
-  id              String @id @default(uuid())
-  billingReportId String
-  consumerId      String
-  viewedAt        DateTime?
-
-  billingReport BillingReport @relation(fields: [billingReportId], references: [id])
-  consumer Consumer @relation(fields: [consumerId], references: [id])
-}
-
-//////////////////////////////////////////////////
-// AI QUERY HANDLING
-//////////////////////////////////////////////////
-
-model CustomerQuery {
-  id           String @id @default(uuid())
-  consumerId   String
-  queryText    String
-  aiCategory   String?
-  aiConfidence Float?
-  status       QueryStatus @default(PENDING)
-  adminReply   String?
-  reviewedBy   String?
-
-  consumer Consumer @relation(fields: [consumerId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-//////////////////////////////////////////////////
-// NOTIFICATIONS + PREFERENCES
-//////////////////////////////////////////////////
-
-model Notification {
-  id         String @id @default(uuid())
-  consumerId String
-  title      String
-  message    String
-  type       String
-  isRead     Boolean @default(false)
-
-  consumer Consumer @relation(fields: [consumerId], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-model CustomerPreference {
-  id         String @id @default(uuid())
-  consumerId String @unique
-  language   String? @default("en")
-  alerts     Boolean @default(true)
-  theme      String?
-
-  consumer Consumer @relation(fields: [consumerId], references: [id])
-}
-
-//////////////////////////////////////////////////
-// REPORTING + EXPORT
-//////////////////////////////////////////////////
-
-model ReportFormat {
-  id      String @id @default(uuid())
-  boardId String
-  name    String
-  schema  Json
-
-  board ElectricityBoard @relation("BoardFormats", fields: [boardId], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-model GeneratedReportFile {
-  id         String @id @default(uuid())
-  reportType String
-  boardId    String?
-  stateId    String?
-  fileUrl    String
-  format     ReportFileFormat
-  createdBy  String
-
-  board ElectricityBoard? @relation("BoardReports", fields: [boardId], references: [id])
-  state State? @relation("StateReports", fields: [stateId], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-//////////////////////////////////////////////////
-// AUDIT + RETENTION
-//////////////////////////////////////////////////
-
-model AuditLog {
-  id       String @id @default(uuid())
-  userId   String
-  action   String
-  entity   String
-  entityId String
-  metadata Json?
-
-  user User @relation("UserAuditLogs", fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-}
-
-model DataRetentionPolicy {
-  id            String @id @default(uuid())
-  stateId       String?
-  boardId       String?
-  entityType    String
-  retentionDays Int
-
-  createdAt DateTime @default(now())
 }
