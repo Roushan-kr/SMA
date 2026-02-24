@@ -14,11 +14,19 @@ export interface AuthUser {
   boardId: string | null;
 }
 
+export interface AuthConsumer {
+  id: string;
+  clerkUserId: string;
+  stateId: string;
+  boardId: string;
+}
+
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       appUser?: AuthUser;
+      appConsumer?: AuthConsumer;
     }
   }
 }
@@ -33,7 +41,10 @@ export const Permission = {
   METER_UPDATE: "meter:update",
   METER_ASSIGN: "meter:assign",
   METER_DELETE: "meter:delete",
+  CONSUMER_CREATE: "consumer:create",
   CONSUMER_READ: "consumer:read",
+  CONSUMER_UPDATE: "consumer:update",
+  CONSUMER_DELETE: "consumer:delete",
   BILLING_READ: "billing:read",
   REPORT_GENERATE: "report:generate",
   QUERY_MANAGE: "query:manage",
@@ -50,7 +61,10 @@ const ROLE_PERMISSIONS: Record<RoleType, readonly PermissionKey[]> = {
     Permission.METER_READ,
     Permission.METER_UPDATE,
     Permission.METER_ASSIGN,
+    Permission.CONSUMER_CREATE,
     Permission.CONSUMER_READ,
+    Permission.CONSUMER_UPDATE,
+    Permission.CONSUMER_DELETE,
     Permission.BILLING_READ,
     Permission.REPORT_GENERATE,
     Permission.QUERY_MANAGE,
@@ -62,7 +76,10 @@ const ROLE_PERMISSIONS: Record<RoleType, readonly PermissionKey[]> = {
     Permission.METER_READ,
     Permission.METER_UPDATE,
     Permission.METER_ASSIGN,
+    Permission.CONSUMER_CREATE,
     Permission.CONSUMER_READ,
+    Permission.CONSUMER_UPDATE,
+    Permission.CONSUMER_DELETE,
     Permission.BILLING_READ,
     Permission.REPORT_GENERATE,
     Permission.QUERY_MANAGE,
@@ -121,6 +138,46 @@ export function resolveAppUser() {
         role: user.role,
         stateId: user.stateId,
         boardId: user.boardId,
+      };
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+// ── Middleware: Resolve Consumer (Clerk → Consumer) ──────────────────
+
+/**
+ * After Clerk authentication, resolve the internal `Consumer` record
+ * from the database using `clerkUserId` and attach it to `req.appConsumer`.
+ * Used for consumer-facing self-service routes.
+ */
+export function resolveConsumer() {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const auth = getAuth(req);
+      const clerkUserId = auth.userId;
+
+      if (!clerkUserId) {
+        throw new UnauthorizedError("No authenticated user found");
+      }
+
+      const consumer = await prisma.consumer.findUnique({
+        where: { clerkUserId },
+        select: { id: true, clerkUserId: true, stateId: true, boardId: true },
+      });
+
+      if (!consumer || !consumer.clerkUserId) {
+        throw new ForbiddenError("Consumer not registered in the system");
+      }
+
+      req.appConsumer = {
+        id: consumer.id,
+        clerkUserId: consumer.clerkUserId,
+        stateId: consumer.stateId,
+        boardId: consumer.boardId,
       };
 
       next();

@@ -2,6 +2,7 @@ import { prisma } from "../lib/prisma.js";
 import type { AuthUser } from "../middleware/auth.js";
 import type { MeterStatus } from "../generated/prisma/client.js";
 import { NotFoundError, BadRequestError, mapPrismaError } from "../lib/errors.js";
+import { buildScopeFilter } from "../helper/service.helper.js";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -21,26 +22,6 @@ export interface ConsumptionSummary {
   readingCount: number;
   maxDemand: number | null;
   avgVoltage: number | null;
-}
-
-// ── Scope Helper ─────────────────────────────────────────────────────
-
-/**
- * Build a Prisma `where` fragment that scopes meter queries
- * based on the caller's role (board / state scoping).
- */
-function buildScopeFilter(user: AuthUser) {
-  if (user.role === "SUPER_ADMIN") return {};
-  if (user.role === "STATE_ADMIN" && user.stateId) {
-    return { consumer: { stateId: user.stateId } };
-  }
-  if (user.role === "BOARD_ADMIN" && user.boardId) {
-    return { consumer: { boardId: user.boardId } };
-  }
-  // SUPPORT_AGENT and AUDITOR: scope by board if available, else state
-  if (user.boardId) return { consumer: { boardId: user.boardId } };
-  if (user.stateId) return { consumer: { stateId: user.stateId } };
-  return {};
 }
 
 // ── Service ──────────────────────────────────────────────────────────

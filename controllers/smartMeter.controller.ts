@@ -3,29 +3,12 @@ import { smartMeterService } from "../services/smartMeter.service.js";
 import { sendSuccess } from "../lib/apiResponse.js";
 import { BadRequestError } from "../lib/errors.js";
 import type { MeterStatus } from "../generated/prisma/client.js";
+import { requireBody,   requireParam } from "../helper/controller.helper.js";
 
 // ── Validation Helpers ───────────────────────────────────────────────
 
 const VALID_METER_STATUSES: MeterStatus[] = ["ACTIVE", "INACTIVE", "FAULTY", "DISCONNECTED"];
 
-function requireBody(body: unknown, ...fields: string[]): void {
-  if (!body || typeof body !== "object") {
-    throw new BadRequestError("Request body is required");
-  }
-  for (const field of fields) {
-    if (!(field in body) || (body as Record<string, unknown>)[field] == null) {
-      throw new BadRequestError(`Field '${field}' is required`);
-    }
-  }
-}
-
-function requireParam(params: Record<string, unknown>, name: string): string {
-  const value = params[name];
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new BadRequestError(`URL parameter '${name}' is required`);
-  }
-  return value;
-}
 
 // ── Controller ───────────────────────────────────────────────────────
 
