@@ -11,6 +11,7 @@ import reportRoutes from "./routes/report.routes.js";
 import auditRoutes from "./routes/audit.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import referenceRoutes from "./routes/reference.routes.js";
+import retentionRoutes from "./routes/retention.routes.js";
 
 config();
 
@@ -35,6 +36,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/audit", auditRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/reference", referenceRoutes);
+app.use("/api/retention", retentionRoutes);
 
 // ── Global Error Handler (must be last) ──────────────────────────────
 app.use(globalErrorHandler);
