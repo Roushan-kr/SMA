@@ -5,6 +5,7 @@ import { globalErrorHandler } from "./middleware/errorHandler.js";
 import smartMeterRoutes from "./routes/smartMeter.routes.js";
 import consumerRoutes from "./routes/consumer.routes.js";
 import billingReportRoutes from "./routes/billingReport.routes.js";
+import queryRoutes from "./routes/query.routes.js";
 
 config();
 
@@ -23,6 +24,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/smart-meters", smartMeterRoutes);
 app.use("/api/consumers", consumerRoutes);
 app.use("/api/billing", billingReportRoutes);
+app.use("/api/queries", queryRoutes);
 
 // ── Global Error Handler (must be last) ──────────────────────────────
 app.use(globalErrorHandler);
