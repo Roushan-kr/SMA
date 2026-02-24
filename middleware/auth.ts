@@ -50,6 +50,7 @@ export const Permission = {
   BILLING_RECALCULATE: "billing:recalculate",
   REPORT_GENERATE: "report:generate",
   QUERY_MANAGE: "query:manage",
+  NOTIFICATION_MANAGE: "notification:manage",
   AUDIT_READ: "audit:read",
   USER_MANAGE: "user:manage",
 } as const;
@@ -72,6 +73,7 @@ const ROLE_PERMISSIONS: Record<RoleType, readonly PermissionKey[]> = {
     Permission.BILLING_RECALCULATE,
     Permission.REPORT_GENERATE,
     Permission.QUERY_MANAGE,
+    Permission.NOTIFICATION_MANAGE,
     Permission.AUDIT_READ,
     Permission.USER_MANAGE,
   ],
@@ -89,12 +91,14 @@ const ROLE_PERMISSIONS: Record<RoleType, readonly PermissionKey[]> = {
     Permission.BILLING_RECALCULATE,
     Permission.REPORT_GENERATE,
     Permission.QUERY_MANAGE,
+    Permission.NOTIFICATION_MANAGE,
   ],
   SUPPORT_AGENT: [
     Permission.METER_READ,
     Permission.CONSUMER_READ,
     Permission.BILLING_READ,
     Permission.QUERY_MANAGE,
+    Permission.NOTIFICATION_MANAGE,
   ],
   AUDITOR: [
     Permission.METER_READ,

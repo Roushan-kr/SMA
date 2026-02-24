@@ -6,6 +6,7 @@ import smartMeterRoutes from "./routes/smartMeter.routes.js";
 import consumerRoutes from "./routes/consumer.routes.js";
 import billingReportRoutes from "./routes/billingReport.routes.js";
 import queryRoutes from "./routes/query.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 
 config();
 
@@ -25,6 +26,7 @@ app.use("/api/smart-meters", smartMeterRoutes);
 app.use("/api/consumers", consumerRoutes);
 app.use("/api/billing", billingReportRoutes);
 app.use("/api/queries", queryRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // ── Global Error Handler (must be last) ──────────────────────────────
 app.use(globalErrorHandler);
