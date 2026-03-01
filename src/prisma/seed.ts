@@ -135,6 +135,7 @@ async function main() {
     data: {
       name: "MGVCL Support Agent",
       clerkUserId: "clerk_support_gj_001",
+      email: "support@mgvcl.gj.in",
       phone: "+911234567890",
       role: RoleType.SUPPORT_AGENT,
       stateId: gujarat.id,
