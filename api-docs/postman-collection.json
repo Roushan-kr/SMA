@@ -1,0 +1,1409 @@
+{
+  "info": {
+    "_postman_id": "smartmettr-api-collection",
+    "name": "SmartMettr Energy Management API",
+    "description": "Comprehensive Postman collection for SmartMettr API with all endpoints, request/response examples, and authentication setup.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "jwt_token",
+      "value": "your_clerk_jwt_token_here"
+    },
+    {
+      "key": "user_id",
+      "value": ""
+    },
+    {
+      "key": "state_id",
+      "value": ""
+    },
+    {
+      "key": "board_id",
+      "value": ""
+    },
+    {
+      "key": "consumer_id",
+      "value": ""
+    },
+    {
+      "key": "meter_id",
+      "value": ""
+    },
+    {
+      "key": "bill_id",
+      "value": ""
+    },
+    {
+      "key": "query_id",
+      "value": ""
+    },
+    {
+      "key": "notification_id",
+      "value": ""
+    },
+    {
+      "key": "report_id",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if the API server is up and running"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"John Doe\", \"email\": \"john@example.com\", \"phone\": \"9876543210\", \"role\": \"STATE_ADMIN\", \"stateId\": \"{{state_id}}\", \"boardId\": null}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Create a new admin user"
+          },
+          "response": []
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users?page=1&limit=10&role=STATE_ADMIN",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "role",
+                  "value": "STATE_ADMIN"
+                }
+              ]
+            },
+            "description": "List users with pagination and filtering"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Get a specific user by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"role\": \"BOARD_ADMIN\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}", "role"]
+            },
+            "description": "Update a user's role"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Scope",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"stateId\": \"{{state_id}}\", \"boardId\": \"{{board_id}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/scope",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}", "scope"]
+            },
+            "description": "Update user's scope (stateId/boardId)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Delete a user"
+          },
+          "response": []
+        },
+        {
+          "name": "List User Consents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/consents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}", "consents"]
+            },
+            "description": "List all consents for a user"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Consent",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"consentType\": \"ENERGY_TRACKING\", \"granted\": true}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}/consents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}", "consents"]
+            },
+            "description": "Update user's consent"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Consumer Management",
+      "item": [
+        {
+          "name": "Register Consumer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Jane Smith\", \"phoneNumber\": \"9876543210\", \"address\": \"123 Main Street\", \"stateId\": \"{{state_id}}\", \"boardId\": \"{{board_id}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/consumers/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "consumers", "register"]
+            },
+            "description": "Register as a new consumer"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/consumers/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "consumers", "me"]
+            },
+            "description": "Get consumer's own profile"
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Jane Smith\", \"phoneNumber\": \"9876543210\", \"address\": \"456 Oak Avenue\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/consumers/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "consumers", "me"]
+            },
+            "description": "Update own consumer profile"
+          },
+          "response": []
+        },
+        {
+          "name": "List Consumers (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/consumers?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "consumers"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List all consumers (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Consumer by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/consumers/{{consumer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "consumers", "{{consumer_id}}"]
+            },
+            "description": "Get a specific consumer by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Consumer (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Jane Smith Updated\", \"phoneNumber\": \"9876543210\", \"address\": \"789 Pine Road\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/consumers/{{consumer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "consumers", "{{consumer_id}}"]
+            },
+            "description": "Update a consumer (admin only)"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Consumer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/consumers/{{consumer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "consumers", "{{consumer_id}}"]
+            },
+            "description": "Delete a consumer"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Consumer Consents",
+      "item": [
+        {
+          "name": "Get My Consents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/consumers/me/consents",
+              "host": ["{{base_url}}"],
+              "path": ["api", "consumers", "me", "consents"]
+            },
+            "description": "View consumer's own consents"
+          },
+          "response": []
+        },
+        {
+          "name": "Grant Consent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/consumers/me/consents/ENERGY_TRACKING/grant",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "consumers",
+                "me",
+                "consents",
+                "ENERGY_TRACKING",
+                "grant"
+              ]
+            },
+            "description": "Grant a consent (ENERGY_TRACKING or AI_QUERY_PROCESSING)"
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Consent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/consumers/me/consents/ENERGY_TRACKING/revoke",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "consumers",
+                "me",
+                "consents",
+                "ENERGY_TRACKING",
+                "revoke"
+              ]
+            },
+            "description": "Revoke a consent"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Smart Meters",
+      "item": [
+        {
+          "name": "Create Smart Meter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"meterNumber\": \"SM-001-2024\", \"tariffId\": \"{{tariff_id}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/smart-meters",
+              "host": ["{{base_url}}"],
+              "path": ["api", "smart-meters"]
+            },
+            "description": "Create a new smart meter"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Meter by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/smart-meters/{{meter_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "smart-meters", "{{meter_id}}"]
+            },
+            "description": "Get a specific smart meter by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Meter to Consumer",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"consumerId\": \"{{consumer_id}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/smart-meters/{{meter_id}}/assign",
+              "host": ["{{base_url}}"],
+              "path": ["api", "smart-meters", "{{meter_id}}", "assign"]
+            },
+            "description": "Assign a meter to a consumer"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Meters by Consumer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/smart-meters/consumer/{{consumer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "smart-meters", "consumer", "{{consumer_id}}"]
+            },
+            "description": "Get all meters for a specific consumer"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Meter Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"ACTIVE\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/smart-meters/{{meter_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "smart-meters", "{{meter_id}}", "status"]
+            },
+            "description": "Update meter status (ACTIVE, INACTIVE, FAULTY, DISCONNECTED)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Consumption Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/smart-meters/{{meter_id}}/consumption",
+              "host": ["{{base_url}}"],
+              "path": ["api", "smart-meters", "{{meter_id}}", "consumption"]
+            },
+            "description": "Get consumption summary for a meter"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Billing Reports",
+      "item": [
+        {
+          "name": "Generate Billing Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"meterId\": \"{{meter_id}}\", \"billingStart\": \"2024-01-01T00:00:00Z\", \"billingEnd\": \"2024-01-31T23:59:59Z\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/billing/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "generate"]
+            },
+            "description": "Generate a billing report for a meter"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Consumption Aggregate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"meterId\": \"{{meter_id}}\", \"periodStart\": \"2024-01-01T00:00:00Z\", \"periodEnd\": \"2024-01-31T23:59:59Z\", \"granularity\": \"DAILY\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/billing/aggregate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "aggregate"]
+            },
+            "description": "Build/refresh a consumption aggregate"
+          },
+          "response": []
+        },
+        {
+          "name": "List Billing Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/billing?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List all billing reports with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Aggregates for Meter",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/billing/meter/{{meter_id}}/aggregates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "meter", "{{meter_id}}", "aggregates"]
+            },
+            "description": "Get consumption aggregates for a meter"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Billing Report by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/billing/{{bill_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "{{bill_id}}"]
+            },
+            "description": "Get a specific billing report by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Recalculate Billing Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reason\": \"Meter reading correction\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/billing/{{bill_id}}/recalculate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "{{bill_id}}", "recalculate"]
+            },
+            "description": "Recalculate an existing billing report"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Recalculation History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/billing/{{bill_id}}/recalculations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "{{bill_id}}", "recalculations"]
+            },
+            "description": "Get recalculation history for a billing report"
+          },
+          "response": []
+        },
+        {
+          "name": "Record Bill View",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/billing/{{bill_id}}/view",
+              "host": ["{{base_url}}"],
+              "path": ["api", "billing", "{{bill_id}}", "view"]
+            },
+            "description": "Consumer records viewing a bill"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Queries",
+      "item": [
+        {
+          "name": "Submit Query",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"queryText\": \"Why is my electricity bill higher this month?\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/queries",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queries"]
+            },
+            "description": "Consumer submits a new query"
+          },
+          "response": []
+        },
+        {
+          "name": "List My Queries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/queries/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queries", "me"]
+            },
+            "description": "Consumer lists their own queries"
+          },
+          "response": []
+        },
+        {
+          "name": "List All Queries (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/queries?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queries"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Admin lists all queries with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Query Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"status\": \"RESOLVED\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/queries/{{query_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queries", "{{query_id}}", "status"]
+            },
+            "description": "Admin updates query status"
+          },
+          "response": []
+        },
+        {
+          "name": "Reply to Query",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"adminReply\": \"Your bill increased due to higher consumption during summer months.\", \"status\": \"RESOLVED\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/queries/{{query_id}}/reply",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queries", "{{query_id}}", "reply"]
+            },
+            "description": "Admin replies to a query"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Query",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/queries/{{query_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queries", "{{query_id}}"]
+            },
+            "description": "Admin deletes a query"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Query Processing",
+      "item": [
+        {
+          "name": "Fetch Pending Queries for AI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/queries/ai/pending",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queries", "ai", "pending"]
+            },
+            "description": "Fetch PENDING queries for AI processing"
+          },
+          "response": []
+        },
+        {
+          "name": "AI Classify Query",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"category\": \"billing_inquiry\", \"confidence\": 0.95}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/queries/{{query_id}}/ai-classify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queries", "{{query_id}}", "ai-classify"]
+            },
+            "description": "AI classifies a query"
+          },
+          "response": []
+        },
+        {
+          "name": "AI Auto-Resolve Query",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"category\": \"billing_inquiry\", \"confidence\": 0.92, \"resolutionText\": \"Your consumption increased by 20% this month due to heavy AC usage during summer.\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/queries/{{query_id}}/ai-resolve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "queries", "{{query_id}}", "ai-resolve"]
+            },
+            "description": "AI auto-resolves a query"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications"]
+            },
+            "description": "Consumer lists their own notifications"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Notification (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"consumerId\": \"{{consumer_id}}\", \"title\": \"Bill Ready\", \"message\": \"Your electricity bill is ready for review\", \"type\": \"billing\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notifications",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications"]
+            },
+            "description": "Admin creates a notification for a consumer"
+          },
+          "response": []
+        },
+        {
+          "name": "List All Notifications (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/admin",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "admin"]
+            },
+            "description": "Admin lists all notifications (scope-filtered)"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/read-all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "read-all"]
+            },
+            "description": "Consumer marks all notifications as read"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/{{notification_id}}/read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "{{notification_id}}", "read"]
+            },
+            "description": "Consumer marks a single notification as read"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/{{notification_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notifications", "{{notification_id}}"]
+            },
+            "description": "Admin deletes a notification"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Create Report Format",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"boardId\": \"{{board_id}}\", \"name\": \"Standard Billing Format\", \"schema\": {\"includeCharts\": true, \"language\": \"en\"}}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reports/formats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "formats"]
+            },
+            "description": "Create a report format template"
+          },
+          "response": []
+        },
+        {
+          "name": "List Report Formats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reports/formats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "formats"]
+            },
+            "description": "List report formats (scope-filtered)"
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"reportType\": \"BILLING_SUMMARY\", \"format\": \"PDF\", \"filters\": {\"billingStart\": \"2024-01-01T00:00:00Z\", \"billingEnd\": \"2024-01-31T23:59:59Z\"}}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reports/generate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "generate"]
+            },
+            "description": "Generate a report file"
+          },
+          "response": []
+        },
+        {
+          "name": "List Generated Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reports?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List generated reports with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Download Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reports/{{report_id}}/download",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "{{report_id}}", "download"]
+            },
+            "description": "Download a report file"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Report",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reports/{{report_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reports", "{{report_id}}"]
+            },
+            "description": "Delete a generated report"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "item": [
+        {
+          "name": "List Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/audit?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "audit"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "List audit logs with pagination"
+          },
+          "response": []
+        },
+        {
+          "name": "Export Audit Logs as CSV",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/audit/export/csv",
+              "host": ["{{base_url}}"],
+              "path": ["api", "audit", "export", "csv"]
+            },
+            "description": "Export audit logs as CSV file"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Audit Log by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/audit/{{audit_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "audit", "{{audit_id}}"]
+            },
+            "description": "Get a specific audit log by ID"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reference Data",
+      "item": [
+        {
+          "name": "Create State",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"Maharashtra\", \"code\": \"MH\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reference/states",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference", "states"]
+            },
+            "description": "Create a new state"
+          },
+          "response": []
+        },
+        {
+          "name": "List States",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reference/states",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference", "states"]
+            },
+            "description": "List all states (scope-filtered)"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Electricity Board",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"MSEDCL - Nagpur\", \"code\": \"MSEDCL-NG\", \"stateId\": \"{{state_id}}\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reference/boards",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference", "boards"]
+            },
+            "description": "Create a new electricity board"
+          },
+          "response": []
+        },
+        {
+          "name": "List Electricity Boards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reference/boards",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference", "boards"]
+            },
+            "description": "List all electricity boards (scope-filtered)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Board by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reference/boards/{{board_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference", "boards", "{{board_id}}"]
+            },
+            "description": "Get a specific electricity board by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Electricity Board",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\": \"MSEDCL - Nagpur District\", \"code\": \"MSEDCL-NGP\"}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/reference/boards/{{board_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference", "boards", "{{board_id}}"]
+            },
+            "description": "Update an electricity board"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Electricity Board",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/reference/boards/{{board_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "reference", "boards", "{{board_id}}"]
+            },
+            "description": "Delete an electricity board"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Retention Policies",
+      "item": [
+        {
+          "name": "Create Retention Policy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"stateId\": \"{{state_id}}\", \"boardId\": null, \"entityType\": \"MeterReading\", \"retentionDays\": 365}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/retention",
+              "host": ["{{base_url}}"],
+              "path": ["api", "retention"]
+            },
+            "description": "Create a retention policy"
+          },
+          "response": []
+        },
+        {
+          "name": "List Retention Policies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/retention",
+              "host": ["{{base_url}}"],
+              "path": ["api", "retention"]
+            },
+            "description": "List retention policies (scope-filtered)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Retention Policy",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"retentionDays\": 730}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/retention/{{retention_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "retention", "{{retention_id}}"]
+            },
+            "description": "Update a retention policy"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Retention Policy",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/retention/{{retention_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "retention", "{{retention_id}}"]
+            },
+            "description": "Delete a retention policy"
+          },
+          "response": []
+        },
+        {
+          "name": "Run Retention Cleanup",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/retention/cleanup/run",
+              "host": ["{{base_url}}"],
+              "path": ["api", "retention", "cleanup", "run"]
+            },
+            "description": "Trigger retention cleanup process"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
