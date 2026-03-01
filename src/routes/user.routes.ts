@@ -29,6 +29,18 @@ router.get(
   (req, res, next) => userController.list(req, res, next),
 );
 
+// GET /me — get the signed-in user's own profile (token-based)
+router.get(
+  "/me",
+  (req, res, next) => userController.getMe(req, res, next),
+);
+
+// GET /me/consents — get the signed-in user's own consents
+router.get(
+  "/me/consents",
+  (req, res, next) => userController.listMeConsents(req, res, next),
+);
+
 // GET /:id — get user by ID
 router.get(
   "/:id",

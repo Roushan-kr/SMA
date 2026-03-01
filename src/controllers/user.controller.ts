@@ -80,6 +80,33 @@ export class UserController {
   }
 
   /**
+   * GET /me
+   * Return the currently authenticated admin's own profile.
+   * req.appUser is already populated by resolveAppUser() middleware.
+   */
+  async getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      // req.appUser is already the full User row — just return it.
+      sendSuccess(res, req.appUser!);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /me/consents
+   * Return consents for the signed-in user.
+   */
+  async listMeConsents(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const consents = await userService.listUserConsents(req.appUser!.id, req.appUser!);
+      sendSuccess(res, consents);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * GET /:id
    * Get a single user by ID.
    */
