@@ -162,6 +162,57 @@ export class SmartMeterController {
       next(error);
     }
   }
+  /**
+   * GET /my-meters
+   * Consumer self-service: list all meters owned by the signed-in consumer.
+   */
+  async getMyMeters(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const meters = await smartMeterService.getMetersForConsumerSelf(
+        req.appConsumer!.id,
+      );
+      sendSuccess(res, meters);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /my-meters/:meterId/consumption
+   * Consumer self-service: get consumption summary for one of their own meters.
+   */
+  async getMyMeterConsumption(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const meterId = requireParam(req.params, "meterId");
+
+      const { periodStart, periodEnd } = req.query as {
+        periodStart?: string;
+        periodEnd?: string;
+      };
+
+      if (!periodStart || !periodEnd) {
+        throw new BadRequestError("Query params 'periodStart' and 'periodEnd' are required");
+      }
+
+      const start = new Date(periodStart);
+      const end = new Date(periodEnd);
+
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        throw new BadRequestError("Invalid date format. Use ISO 8601 (e.g. 2025-01-01T00:00:00Z)");
+      }
+
+      const summary = await smartMeterService.getConsumerMeterConsumption(
+        meterId,
+        req.appConsumer!.id,
+        start,
+        end,
+      );
+
+      sendSuccess(res, summary);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const smartMeterController = new SmartMeterController();

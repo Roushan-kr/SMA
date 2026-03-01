@@ -382,6 +382,73 @@ export class BillingReportService {
     }
   }
 
+  // ── Consumer Self-Service ────────────────────────────────────────
+
+  /**
+   * List billing reports for meters owned by a specific consumer.
+   * Used by consumer self-service (no admin scope needed).
+   */
+  async listConsumerBills(filters: {
+    consumerId: string;
+    meterId?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    try {
+      const page = filters.page ?? 1;
+      const limit = Math.min(filters.limit ?? 20, 50);
+      const skip = (page - 1) * limit;
+
+      const where: Record<string, unknown> = {
+        isLatest: true,
+        meter: { consumerId: filters.consumerId },
+      };
+
+      if (filters.meterId) {
+        where["meterId"] = filters.meterId;
+      }
+
+      const [reports, total] = await Promise.all([
+        prisma.billingReport.findMany({
+          where,
+          include: { meter: true, tariff: true },
+          orderBy: { generatedAt: "desc" },
+          skip,
+          take: limit,
+        }),
+        prisma.billingReport.count({ where }),
+      ]);
+
+      return {
+        data: reports,
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      };
+    } catch (error) {
+      throw mapPrismaError(error);
+    }
+  }
+
+  /**
+   * Get a single billing report, verifying it belongs to the consumer's meter.
+   */
+  async getConsumerBillById(billId: string, consumerId: string) {
+    try {
+      const report = await prisma.billingReport.findFirst({
+        where: {
+          id: billId,
+          meter: { consumerId },
+        },
+        include: { meter: true, tariff: true },
+      });
+
+      if (!report) throw new NotFoundError("BillingReport", billId);
+
+      return report;
+    } catch (error) {
+      throw mapPrismaError(error);
+    }
+  }
+
   /**
    * Record that a consumer has viewed a billing report.
    */

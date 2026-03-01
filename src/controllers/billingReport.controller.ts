@@ -194,6 +194,54 @@ export class BillingReportController {
   }
 
   /**
+   * GET /my-bills
+   * Consumer self-service: list all billing reports for meters owned by the signed-in consumer.
+   * Supports optional query params: meterId, page, limit.
+   */
+  async listMyBills(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { meterId, page, limit } = req.query as {
+        meterId?: string;
+        page?: string;
+        limit?: string;
+      };
+
+      const result = await billingReportService.listConsumerBills(
+        {
+          consumerId: req.appConsumer!.id,
+          meterId: meterId!,
+          page: page ? parseInt(page, 10) : 1,
+          limit: limit ? parseInt(limit, 10) : 1,
+        },
+      );
+
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /my-bills/:billId
+   * Consumer self-service: view a single billing report by ID.
+   * Verifies the bill belongs to a meter owned by the signed-in consumer.
+   */
+  async getMyBillById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const billId = requireParam(req.params, "billId");
+
+      const report = await billingReportService.getConsumerBillById(
+        billId,
+        req.appConsumer!.id,
+      );
+
+      sendSuccess(res, report);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * POST /:billId/view
    * Record that a consumer has viewed a billing report.
    * (Consumer self-service — uses appConsumer)

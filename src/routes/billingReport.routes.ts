@@ -51,6 +51,31 @@ router.get(
   (req, res, next) => billingReportController.getAggregates(req, res, next),
 );
 
+// ═══════════════════════════════════════════════════════════════════════
+//  Consumer Self-Service Routes (must be before /:billId param route)
+//  Auth: requireAuth + resolveConsumer()
+// ═══════════════════════════════════════════════════════════════════════
+
+// GET /my-bills — list the signed-in consumer's own billing reports
+router.get(
+  "/my-bills",
+  requireAuth,
+  resolveConsumer(),
+  (req, res, next) => billingReportController.listMyBills(req, res, next),
+);
+
+// GET /my-bills/:billId — consumer views a specific bill
+router.get(
+  "/my-bills/:billId",
+  requireAuth,
+  resolveConsumer(),
+  (req, res, next) => billingReportController.getMyBillById(req, res, next),
+);
+
+// ═══════════════════════════════════════════════════════════════════════
+//  Admin — GET /:billId (LAST — catch-all param, must stay at bottom)
+// ═══════════════════════════════════════════════════════════════════════
+
 // GET /:billId — get a single billing report by ID
 router.get(
   "/:billId",

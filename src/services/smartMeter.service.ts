@@ -203,7 +203,75 @@ export class SmartMeterService {
     }
   }
 
-  // ── Private Helpers ──────────────────────────────────────────────
+  // ── Consumer Self-Service ────────────────────────────────────────
+
+  /**
+   * List all meters belonging to a consumer (consumer self-service).
+   * No admin scope check — consumer ID is the scope itself.
+   */
+  async getMetersForConsumerSelf(consumerId: string) {
+    try {
+      const meters = await prisma.smartMeter.findMany({
+        where: { consumerId },
+        include: { tariff: true },
+        orderBy: { createdAt: "desc" },
+      });
+      return meters;
+    } catch (error) {
+      throw mapPrismaError(error);
+    }
+  }
+
+  /**
+   * Get consumption summary for a meter, verifying it belongs to the given consumer.
+   */
+  async getConsumerMeterConsumption(
+    meterId: string,
+    consumerId: string,
+    periodStart: Date,
+    periodEnd: Date,
+  ): Promise<ConsumptionSummary> {
+    try {
+      // Ownership check
+      const meter = await prisma.smartMeter.findFirst({
+        where: { id: meterId, consumerId },
+        select: { id: true, meterNumber: true },
+      });
+
+      if (!meter) throw new NotFoundError("SmartMeter", meterId);
+
+      const readings = await prisma.meterReading.findMany({
+        where: {
+          meterId: meter.id,
+          timestamp: { gte: periodStart, lte: periodEnd },
+        },
+        select: { consumption: true, voltage: true, current: true },
+      });
+
+      const totalUnits = readings.reduce((sum, r) => sum + r.consumption, 0);
+      const voltages = readings.map((r) => r.voltage).filter((v): v is number => v != null);
+      const currents = readings.map((r) => r.current).filter((c): c is number => c != null);
+
+      const maxDemand = currents.length > 0 ? Math.max(...currents) : null;
+      const avgVoltage =
+        voltages.length > 0 ? voltages.reduce((a, b) => a + b, 0) / voltages.length : null;
+
+      return {
+        meterId: meter.id,
+        meterNumber: meter.meterNumber,
+        periodStart,
+        periodEnd,
+        totalUnits: Math.round(totalUnits * 100) / 100,
+        readingCount: readings.length,
+        maxDemand: maxDemand != null ? Math.round(maxDemand * 100) / 100 : null,
+        avgVoltage: avgVoltage != null ? Math.round(avgVoltage * 100) / 100 : null,
+      };
+    } catch (error) {
+      throw mapPrismaError(error);
+    }
+  }
+
+  // ── Private Helpers ─────────────────────────────────────────────────────
 
   /**
    * Find a meter by ID with scope enforcement.
