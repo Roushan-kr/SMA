@@ -58,8 +58,8 @@ export class AiService {
       try {
         const result = await this.classifyQuery(query.queryText);
         results.set(query.id, result);
-      } catch (error) {
-        logger.error(`AI processing failed for query ${query.id}`, error);
+      } catch (error:any) {
+        logger.error(`AI processing failed for query ${query.id}`, error );
       }
     }
     return results;
