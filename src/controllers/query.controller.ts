@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { queryService, isValidQueryStatus } from "../services/query.service.js";
+import { aiService } from "../services/ai.service.js";
 import { sendSuccess } from "../lib/apiResponse.js";
 import { BadRequestError } from "../lib/errors.js";
 import { requireBody, requireParam } from "../helper/controller.helper.js";
@@ -191,23 +192,80 @@ export class QueryController {
   }
 
   /**
+   * POST /ai/process-pending
+   * Triggers the AI processing for a batch of PENDING queries.
+   */
+  async processPendingQueriesWithAi(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      // 1. Fetch pending
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
+      const queries = await queryService.fetchPendingForAi(req.appUser!, limit);
+
+      if (queries.length === 0) {
+        sendSuccess(res, { processedCount: 0, message: "No pending queries found" });
+        return;
+      }
+
+      // 2. Classify via AI Service
+      const aiResults = await aiService.processBatch(
+        queries.map((q) => ({ id: q.id, queryText: q.queryText })),
+      );
+
+      // 3. Process outcomes
+      let resolvedCount = 0;
+      let classifiedCount = 0;
+
+      for (const query of queries) {
+        const result = aiResults.get(query.id);
+        if (!result) continue;
+
+        if (result.confidence > 0.85) {
+          await queryService.autoResolveQueryWithAi(
+            query.id,
+            result.category,
+            result.confidence,
+            result.suggestedReply,
+            req.appUser!,
+          );
+          resolvedCount++;
+        } else {
+          await queryService.classifyQueryWithAi(
+            query.id,
+            result.category,
+            result.confidence,
+            result.suggestedReply,
+            req.appUser!,
+          );
+          classifiedCount++;
+        }
+      }
+
+      sendSuccess(res, { processedCount: queries.length, resolvedCount, classifiedCount }, "Batch processed successfully");
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * PATCH /:id/ai-classify
    * AI agent classifies a query (PENDING → AI_REVIEWED).
    */
   async classifyQueryWithAi(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const id = requireParam(req.params, "id");
-      requireBody(req.body, "aiCategory", "aiConfidence");
+      requireBody(req.body, "aiCategory", "aiConfidence", "suggestedReply");
 
-      const { aiCategory, aiConfidence } = req.body as {
+      const { aiCategory, aiConfidence, suggestedReply } = req.body as {
         aiCategory: string;
         aiConfidence: number;
+        suggestedReply: string;
       };
 
       const updated = await queryService.classifyQueryWithAi(
         id,
         aiCategory,
         aiConfidence,
+        suggestedReply,
         req.appUser!,
       );
 

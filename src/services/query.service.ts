@@ -183,14 +183,32 @@ export class QueryService {
         throw new BadRequestError("Query has already been resolved");
       }
 
-      const updated = await prisma.customerQuery.update({
-        where: { id: query.id },
-        data: {
-          adminReply: reply,
-          reviewedBy: user.id,
-          status: "RESOLVED",
-        },
-        include: { consumer: true },
+      // We wrap this in a transaction to log the Audit action for human approval.
+      const updated = await prisma.$transaction(async (tx) => {
+        const result = await tx.customerQuery.update({
+          where: { id: query.id },
+          data: {
+            adminReply: reply,
+            reviewedBy: user.id,
+            status: "RESOLVED",
+          },
+          include: { consumer: true },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            userId: user.id,
+            action: "RESOLVE_QUERY",
+            entity: "CustomerQuery",
+            entityId: query.id,
+            metadata: {
+              previousStatus: query.status,
+              resolutionLength: reply.length,
+            },
+          },
+        });
+
+        return result;
       });
 
       return updated;
@@ -233,6 +251,7 @@ export class QueryService {
     queryId: string,
     category: string,
     confidence: number,
+    suggestedReply: string,
     authUser: AuthUser,
   ) {
     try {
@@ -253,6 +272,7 @@ export class QueryService {
         data: {
           aiCategory: category,
           aiConfidence: confidence,
+          adminReply: suggestedReply, // Keep suggested reply here so human sees it
           status: "AI_REVIEWED",
         },
         include: { consumer: true },

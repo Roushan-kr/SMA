@@ -86,6 +86,15 @@ router.get(
   (req, res, next) => queryController.fetchPendingForAi(req, res, next),
 );
 
+// POST /ai/process-pending — trigger the AI processing for a batch of PENDING queries
+router.post(
+  "/ai/process-pending",
+  requireAuth,
+  resolveAppUser(),
+  checkPermission(Permission.QUERY_MANAGE),
+  (req, res, next) => queryController.processPendingQueriesWithAi(req, res, next),
+);
+
 // PATCH /:id/ai-classify — AI classifies a query (PENDING → AI_REVIEWED)
 router.patch(
   "/:id/ai-classify",
