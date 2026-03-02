@@ -3,6 +3,8 @@ import type { AuthUser } from "../middleware/auth.js";
 import type { AggregationGranularity } from "../generated/prisma/client.js";
 import { NotFoundError, BadRequestError, mapPrismaError } from "../lib/errors.js";
 import { buildScopeFilter } from "../helper/service.helper.js";
+import { getStorage } from "../lib/storage/index.js";
+import { DateTime } from "luxon";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -364,12 +366,57 @@ export class BillingReportService {
     meterId: string,
     granularity: AggregationGranularity | undefined,
     user: AuthUser,
+    days?: number,
   ) {
     try {
       const meter = await this.findMeterOrThrow(meterId, user);
 
-      const where: Record<string, unknown> = { meterId: meter.id };
+      const where: Record<string, any> = { meterId: meter.id };
       if (granularity) where["granularity"] = granularity;
+      
+      if (days && days > 0) {
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        where["periodStart"] = { gte: startDate };
+      }
+
+      const aggregates = await prisma.consumptionAggregate.findMany({
+        where,
+        orderBy: { periodStart: "desc" },
+      });
+
+      return aggregates;
+    } catch (error) {
+      throw mapPrismaError(error);
+    }
+  }
+
+  /**
+   * Get consumption aggregates for a consumer's own meter.
+   */
+  async getConsumerAggregates(
+    meterId: string,
+    consumerId: string,
+    granularity?: AggregationGranularity,
+    days?: number,
+  ) {
+    try {
+      // Ownership check
+      const meter = await prisma.smartMeter.findFirst({
+        where: { id: meterId, consumerId },
+        select: { id: true },
+      });
+
+      if (!meter) throw new NotFoundError("SmartMeter", meterId);
+
+      const where: Record<string, any> = { meterId: meter.id };
+      if (granularity) where["granularity"] = granularity;
+
+      if (days && days > 0) {
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+        where["periodStart"] = { gte: startDate };
+      }
 
       const aggregates = await prisma.consumptionAggregate.findMany({
         where,
@@ -470,6 +517,34 @@ export class BillingReportService {
       });
 
       return view;
+    } catch (error) {
+      throw mapPrismaError(error);
+    }
+  }
+
+  /**
+   * Dynamically generate a simple invoice PDF buffer and return a signed URL for it.
+   */
+  async downloadConsumerBill(billId: string, consumerId: string) {
+    try {
+      const report = await this.getConsumerBillById(billId, consumerId);
+
+      const now = DateTime.now().toFormat("yyyy-MM-dd HH:mm:ss");
+      const buffer = Buffer.from(
+        `[INVOICE]\nMeter: ${report.meter.meterNumber}\nTotal Amount: Rs ${report.totalAmount}\nUnits Consumed: ${report.totalUnits} kWh\nPeriod: ${report.billingStart.toISOString()} - ${report.billingEnd.toISOString()}\nGenerated On: ${now}\n`,
+        "utf-8",
+      );
+
+      const fileName = `bills/invoice_${billId}_${Date.now()}.pdf`;
+      const storage = await getStorage();
+      const { url, key } = await storage.upload(buffer, fileName, { contentType: "application/pdf" });
+
+      if (storage.getSignedUrl) {
+        const signedUrl = await storage.getSignedUrl(key, 3600);
+        return { url: signedUrl };
+      }
+
+      return { url };
     } catch (error) {
       throw mapPrismaError(error);
     }

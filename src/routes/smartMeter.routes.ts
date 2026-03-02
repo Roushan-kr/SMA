@@ -24,6 +24,14 @@ router.get(
   (req, res, next) => smartMeterController.getMyMeters(req, res, next),
 );
 
+// GET /my-meters/:meterId — details for own meter
+router.get(
+  "/my-meters/:meterId",
+  requireAuth,
+  resolveConsumer(),
+  (req, res, next) => smartMeterController.getMyMeterById(req, res, next),
+);
+
 // GET /my-meters/:meterId/consumption — consumption summary for own meter
 router.get(
   "/my-meters/:meterId/consumption",
@@ -32,12 +40,29 @@ router.get(
   (req, res, next) => smartMeterController.getMyMeterConsumption(req, res, next),
 );
 
+// GET /my-meters/:meterId/aggregates — aggregates for own meter
+router.get(
+  "/my-meters/:meterId/aggregates",
+  requireAuth,
+  resolveConsumer(),
+  (req, res, next) => smartMeterController.getMyMeterAggregates(req, res, next),
+);
+
 // ═══════════════════════════════════════════════════════════════════════
 //  Admin Routes
 //  Auth: requireAuth + resolveAppUser() + checkPermission()
 //  NOTE: /consumer/:consumerId MUST be before /:meterId to avoid
 //  Express treating "consumer" as a meterId param value.
 // ═══════════════════════════════════════════════════════════════════════
+
+// GET / — list all meters (admin)
+router.get(
+  "/",
+  requireAuth,
+  resolveAppUser(),
+  checkPermission(Permission.METER_READ),
+  (req, res, next) => smartMeterController.list(req, res, next),
+);
 
 // GET /consumer/:consumerId — list all meters for a specific consumer (admin)
 router.get(
@@ -82,6 +107,15 @@ router.get(
   resolveAppUser(),
   checkPermission(Permission.METER_READ),
   (req, res, next) => smartMeterController.getConsumptionSummary(req, res, next),
+);
+
+// GET /:meterId/aggregates — aggregates (admin)
+router.get(
+  "/:meterId/aggregates",
+  requireAuth,
+  resolveAppUser(),
+  checkPermission(Permission.METER_READ),
+  (req, res, next) => smartMeterController.getAggregates(req, res, next),
 );
 
 // GET /:meterId — get meter by ID (LAST — catches all remaining /:id patterns)

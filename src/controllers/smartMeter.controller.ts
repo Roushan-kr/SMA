@@ -2,8 +2,9 @@ import type { Request, Response, NextFunction } from "express";
 import { smartMeterService } from "../services/smartMeter.service.js";
 import { sendSuccess } from "../lib/apiResponse.js";
 import { BadRequestError } from "../lib/errors.js";
-import type { MeterStatus } from "../generated/prisma/client.js";
+import type { MeterStatus, AggregationGranularity } from "../generated/prisma/client.js";
 import { requireBody,   requireParam } from "../helper/controller.helper.js";
+import { billingReportService, isValidGranularity } from "../services/billingReport.service.js";
 
 // ── Validation Helpers ───────────────────────────────────────────────
 
@@ -162,6 +163,20 @@ export class SmartMeterController {
       next(error);
     }
   }
+
+  /**
+   * GET /
+   * List all meters within scope (admin).
+   */
+  async list(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const meters = await smartMeterService.getAllMeters(req.appUser!);
+      sendSuccess(res, meters);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /**
    * GET /my-meters
    * Consumer self-service: list all meters owned by the signed-in consumer.
@@ -209,6 +224,75 @@ export class SmartMeterController {
       );
 
       sendSuccess(res, summary);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /:meterId/aggregates
+   * Admin: get consumption aggregates for a meter.
+   */
+  async getAggregates(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const meterId = requireParam(req.params, "meterId");
+      const { granularity, days } = req.query as { granularity?: string; days?: string };
+
+      if (granularity && !isValidGranularity(granularity)) {
+        throw new BadRequestError(`Invalid granularity '${granularity}'`);
+      }
+
+      const result = await billingReportService.getAggregates(
+        meterId,
+        granularity as AggregationGranularity,
+        req.appUser!,
+        days ? parseInt(days, 10) : undefined,
+      );
+
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /my-meters/:meterId/aggregates
+   * Consumer: get consumption aggregates for their own meter.
+   */
+  async getMyMeterAggregates(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const meterId = requireParam(req.params, "meterId");
+      const { granularity, days } = req.query as { granularity?: string; days?: string };
+
+      if (granularity && !isValidGranularity(granularity)) {
+        throw new BadRequestError(`Invalid granularity '${granularity}'`);
+      }
+
+      const result = await billingReportService.getConsumerAggregates(
+        meterId,
+        req.appConsumer!.id,
+        granularity as AggregationGranularity,
+        days ? parseInt(days, 10) : undefined,
+      );
+
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /my-meters/:meterId
+   * Consumer: get details for their own meter.
+   */
+  async getMyMeterById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const meterId = requireParam(req.params, "meterId");
+      const result = await smartMeterService.getMeterByIdForConsumer(
+        meterId,
+        req.appConsumer!.id,
+      );
+      sendSuccess(res, result);
     } catch (error) {
       next(error);
     }

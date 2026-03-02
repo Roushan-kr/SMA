@@ -141,6 +141,31 @@ export class SmartMeterService {
   }
 
   /**
+   * List all meters within the caller's scope (admin).
+   */
+  async getAllMeters(user: AuthUser) {
+    try {
+      const scopeFilter = buildScopeFilter(user);
+      const meters = await prisma.smartMeter.findMany({
+        where: {
+          consumer: scopeFilter,
+        },
+        include: { 
+          consumer: {
+            select: { name: true, phoneNumber: true }
+          }, 
+          tariff: true 
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return meters;
+    } catch (error) {
+      throw mapPrismaError(error);
+    }
+  }
+
+  /**
    * Update a meter's status (ACTIVE, INACTIVE, FAULTY, DISCONNECTED).
    */
   async updateMeterStatus(meterId: string, status: MeterStatus, user: AuthUser) {
@@ -271,6 +296,36 @@ export class SmartMeterService {
     }
   }
 
+  /**
+   * Get a single meter by ID for a consumer (self-service).
+   */
+  async getMeterByIdForConsumer(meterId: string, consumerId: string) {
+    try {
+      const meter = await prisma.smartMeter.findFirst({
+        where: { id: meterId, consumerId },
+        include: {
+          tariff: true,
+          readings: {
+            orderBy: { timestamp: "desc" },
+            take: 1,
+          },
+        },
+      });
+
+      if (!meter) {
+        throw new NotFoundError("SmartMeter", meterId);
+      }
+
+      const { readings, ...rest } = meter;
+      return {
+        ...rest,
+        lastReading: readings[0] || null,
+      };
+    } catch (error) {
+      throw mapPrismaError(error);
+    }
+  }
+
   // ── Private Helpers ─────────────────────────────────────────────────────
 
   /**
@@ -281,7 +336,10 @@ export class SmartMeterService {
     const scopeFilter = buildScopeFilter(user);
 
     const meter = await prisma.smartMeter.findFirst({
-      where: { id: meterId, ...scopeFilter },
+      where: { 
+        id: meterId, 
+        consumer: scopeFilter,
+      },
       include: { consumer: true, tariff: true },
     });
 

@@ -260,6 +260,25 @@ export class BillingReportController {
       next(error);
     }
   }
+
+  /**
+   * GET /my-bills/:billId/download
+   * Consumer self-service: download a single billing report by ID.
+   */
+  async downloadMyBill(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const billId = requireParam(req.params, "billId");
+
+      const result = await billingReportService.downloadConsumerBill(
+        billId,
+        req.appConsumer!.id,
+      );
+
+      sendSuccess(res, result);
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export const billingReportController = new BillingReportController();

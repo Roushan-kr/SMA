@@ -72,6 +72,14 @@ router.get(
   (req, res, next) => billingReportController.getMyBillById(req, res, next),
 );
 
+// GET /my-bills/:billId/download — consumer downloads a specific bill
+router.get(
+  "/my-bills/:billId/download",
+  requireAuth,
+  resolveConsumer(),
+  (req, res, next) => billingReportController.downloadMyBill(req, res, next),
+);
+
 // ═══════════════════════════════════════════════════════════════════════
 //  Admin — GET /:billId (LAST — catch-all param, must stay at bottom)
 // ═══════════════════════════════════════════════════════════════════════
