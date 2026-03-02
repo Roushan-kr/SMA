@@ -14,9 +14,24 @@ import referenceRoutes from './routes/reference.routes.js';
 import retentionRoutes from './routes/retention.routes.js';
 import cors from 'cors';
 
+import { pinoHttp } from 'pino-http';
+import { logger } from './lib/logger.js';
+
 const app = express();
 
 // ── Global Middleware ────────────────────────────────────────────────
+app.use(pinoHttp({
+  logger,
+  customLogLevel: (req: any, res: any, err: any) => {
+    if (res.statusCode >= 500 || err) return 'error';
+    if (res.statusCode >= 400) return 'warn';
+    return 'info';
+  },
+  autoLogging: {
+    ignore: (req: any) => req.url === '/health'
+  }
+}));
+
 app.use(express.json());
 app.use(clerkAuth);
 app.use(cors());
@@ -45,5 +60,5 @@ app.use(globalErrorHandler);
 const PORT = process.env['PORT'] ?? 3000;
 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${String(PORT)}`);
+  logger.info(`Server is running on port ${String(PORT)}`);
 });

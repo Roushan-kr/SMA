@@ -3,6 +3,8 @@ import { AppError, ValidationError } from "../lib/errors.js";
 import type { ApiResponse } from "../lib/apiResponse.js";
 import { Prisma } from "../generated/prisma/client.js";
 
+import { logger } from "../lib/logger.js";
+
 /**
  * Global Express error handler.
  * Must be registered LAST in the middleware chain (after all routes).
@@ -42,7 +44,7 @@ export function globalErrorHandler(
   // ── Prisma Known Errors ────────────────────────────────────────────
   if (err instanceof Prisma.PrismaClientKnownRequestError) {
     const prismaErr = err as Prisma.PrismaClientKnownRequestError;
-    console.error("[PRISMA ERROR]", prismaErr.code, prismaErr.message);
+    logger.error({ err: prismaErr }, `[PRISMA ERROR] ${prismaErr.code}: ${prismaErr.message}`);
 
     // P2037: Too many connections
     if (prismaErr.code === "P2037") {
@@ -83,7 +85,7 @@ export function globalErrorHandler(
   }
 
   // ── Unknown / Programmer Errors ────────────────────────────────────
-  console.error("[UNHANDLED ERROR]", err);
+  logger.error({ err }, "[UNHANDLED ERROR]");
 
   const body: ApiResponse = {
     success: false,
