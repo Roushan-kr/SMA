@@ -46,7 +46,7 @@ app.get('/health', (_req, res) => {
 app.use('/api/smart-meters', smartMeterRoutes);
 app.use('/api/consumers', consumerRoutes);
 app.use('/api/billing', billingReportRoutes);
-app.use('/api/queries', queryRoutes);
+app.use('/api/support', queryRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/audit', auditRoutes);
