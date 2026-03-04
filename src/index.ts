@@ -13,6 +13,7 @@ import userRoutes from './routes/user.routes.js';
 import referenceRoutes from './routes/reference.routes.js';
 import retentionRoutes from './routes/retention.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
 import cors from 'cors';
 
 import { pinoHttp } from 'pino-http';
@@ -54,6 +55,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/reference', referenceRoutes);
 app.use('/api/retention', retentionRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // ── Global Error Handler (must be last) ──────────────────────────────
 app.use(globalErrorHandler);
