@@ -3,6 +3,7 @@ import { prisma } from "../lib/prisma.js";
 import { sendSuccess } from "../lib/apiResponse.js";
 import { buildScopeFilter } from "../helper/service.helper.js";
 import { DateTime } from "luxon";
+import { serverCache } from "../lib/cache.js";
 
 import type { AuthUser } from "../middleware/auth.js";
 
@@ -11,6 +12,14 @@ export class DashboardController {
     try {
       const user = req.appUser as AuthUser;
       const scope = buildScopeFilter(user);
+
+      // Create a cache key based on the user's scope
+      const cacheKey = `dashboard:stats:${user.role}:${user.stateId || "all"}:${user.boardId || "all"}`;
+      const cachedData = serverCache.get(cacheKey);
+      if (cachedData) {
+        sendSuccess(res, cachedData, "Dashboard statistics retrieved from cache");
+        return;
+      }
 
       // 1. Basic counts (Consumers & Meters)
       const [totalConsumers, totalMeters, activeMeters] = await Promise.all([
@@ -90,6 +99,9 @@ export class DashboardController {
         })),
         queryDistribution,
       };
+
+      // Cache for 5 minutes
+      serverCache.set(cacheKey, stats, 300);
 
       sendSuccess(res, stats, "Dashboard statistics retrieved successfully");
     } catch (error) {

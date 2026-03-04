@@ -5,6 +5,7 @@ import { NotFoundError, BadRequestError, mapPrismaError } from "../lib/errors.js
 import { buildScopeFilter } from "../helper/service.helper.js";
 import { getStorage } from "../lib/storage/index.js";
 import { DateTime } from "luxon";
+import { serverCache } from "../lib/cache.js";
 
 // ── Types ────────────────────────────────────────────────────────────
 
@@ -588,6 +589,11 @@ export class BillingReportService {
   private async findMeterOrThrow(meterId: string, user: AuthUser) {
     const scopeFilter = buildMeterScopeFilter(user);
 
+    // Try L1 cache first
+    const cacheKey = `meter:${meterId}:${user.role}:${user.stateId || "all"}:${user.boardId || "all"}`;
+    const cached = serverCache.get(cacheKey);
+    if (cached) return cached as any;
+
     const meter = await prisma.smartMeter.findFirst({
       where: {
         OR: [{ id: meterId }, { meterNumber: meterId }],
@@ -597,6 +603,9 @@ export class BillingReportService {
     });
 
     if (!meter) throw new NotFoundError("SmartMeter", meterId);
+
+    // Cache for 2 minutes (L1)
+    serverCache.set(cacheKey, meter, 120);
 
     return meter;
   }

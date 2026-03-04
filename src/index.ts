@@ -18,20 +18,20 @@ import cors from 'cors';
 
 import { pinoHttp } from 'pino-http';
 import { logger } from './lib/logger.js';
+import { createCacheMiddleware } from './middleware/cache.middleware.js';
 
 const app = express();
+const isDev = process.env['NODE_ENV'] === 'development';
 
 // ── Global Middleware ────────────────────────────────────────────────
 app.use(pinoHttp({
   logger,
-  customLogLevel: (req: any, res: any, err: any) => {
+  autoLogging: !isDev, // tempary 
+  customLogLevel: (req, res, err) => {
     if (res.statusCode >= 500 || err) return 'error';
     if (res.statusCode >= 400) return 'warn';
     return 'info';
   },
-  autoLogging: {
-    ignore: (req: any) => req.url === '/health'
-  }
 }));
 
 app.use(express.json());
@@ -43,19 +43,24 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ── API Routes ───────────────────────────────────────────────────────
-app.use('/api/smart-meters', smartMeterRoutes);
-app.use('/api/consumers', consumerRoutes);
-app.use('/api/billing', billingReportRoutes);
-app.use('/api/support', queryRoutes);
+// ── API Routes (Cached) ──────────────────────────────────────────────
+const cache60 = createCacheMiddleware(60);
+const cache300 = createCacheMiddleware(300);
+
+app.use('/api/smart-meters', cache60, smartMeterRoutes);
+app.use('/api/consumers', cache60, consumerRoutes);
+app.use('/api/billing', cache60, billingReportRoutes);
+app.use('/api/support', cache60, queryRoutes);
+app.use('/api/dashboard', cache300, dashboardRoutes);
+
+// ── API Routes (Standard) ────────────────────────────────────────────
+app.use('/api/users', cache60, userRoutes);
+app.use('/api/reference', cache60, referenceRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/audit', auditRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/reference', referenceRoutes);
 app.use('/api/retention', retentionRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/dashboard', dashboardRoutes);
 
 // ── Global Error Handler (must be last) ──────────────────────────────
 app.use(globalErrorHandler);
