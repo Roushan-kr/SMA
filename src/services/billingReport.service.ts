@@ -34,6 +34,7 @@ export interface ListBillsFilter {
   billingEnd?: string | undefined;
   page?: number | undefined;
   limit?: number | undefined;
+  search?: string | undefined;
 }
 
 const VALID_GRANULARITIES: AggregationGranularity[] = ["HOURLY", "DAILY", "MONTHLY"];
@@ -339,6 +340,16 @@ export class BillingReportService {
         where["billingEnd"] = { lte: new Date(filters.billingEnd) };
       }
 
+      if (filters.search) {
+        where["meter"] = {
+          ...(where["meter"] as object),
+          OR: [
+            { meterNumber: { contains: filters.search, mode: "insensitive" } },
+            { consumer: { name: { contains: filters.search, mode: "insensitive" } } },
+          ],
+        };
+      }
+
       const [reports, total] = await Promise.all([
         prisma.billingReport.findMany({
           where,
@@ -578,7 +589,10 @@ export class BillingReportService {
     const scopeFilter = buildMeterScopeFilter(user);
 
     const meter = await prisma.smartMeter.findFirst({
-      where: { id: meterId, ...scopeFilter },
+      where: {
+        OR: [{ id: meterId }, { meterNumber: meterId }],
+        ...scopeFilter,
+      },
       include: { consumer: true, tariff: true },
     });
 

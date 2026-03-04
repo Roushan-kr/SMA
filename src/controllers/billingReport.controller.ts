@@ -105,7 +105,7 @@ export class BillingReportController {
    */
   async list(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { meterId, consumerId, billingStart, billingEnd, page, limit } =
+      const { meterId, consumerId, billingStart, billingEnd, page, limit, search } =
         req.query as {
           meterId?: string;
           consumerId?: string;
@@ -113,6 +113,7 @@ export class BillingReportController {
           billingEnd?: string;
           page?: string;
           limit?: string;
+          search?: string;
         };
 
       const result = await billingReportService.listBills(
@@ -123,6 +124,7 @@ export class BillingReportController {
           billingEnd,
           page: page ? parseInt(page, 10) : undefined,
           limit: limit ? parseInt(limit, 10) : undefined,
+          search,
         },
         req.appUser!,
       );
